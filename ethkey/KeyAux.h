@@ -42,8 +42,6 @@ using namespace boost::algorithm;
 
 #undef RETURN
 
-class BadArgument: public Exception {};
-
 string getAccountPassword(KeyManager& keyManager, Address const& a)
 {
 	return getPassword("Enter passphrase for address " + keyManager.accountName(a) + " (" + a.abridged() + "; hint:" + keyManager.passwordHint(a) + "): ");
@@ -281,6 +279,8 @@ public:
 			m_mode = OperationMode::Kill;
 		else if (arg == "--no-icap")
 			m_icap = false;
+		else if (arg == "--help")
+			streamHelp(cout);
 		else if (m_mode == OperationMode::DecodeTx || m_mode == OperationMode::Inspect || m_mode == OperationMode::Kill || m_mode == OperationMode::SignTx || m_mode == OperationMode::ImportBare || m_mode == OperationMode::InspectBare || m_mode == OperationMode::KillBare || m_mode == OperationMode::Recode || m_mode == OperationMode::Export || m_mode == OperationMode::RecodeBare || m_mode == OperationMode::ExportBare)
 			m_inputs.push_back(arg);
 		else
