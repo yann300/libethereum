@@ -119,12 +119,16 @@ public:
 	bool interpretLightOption(int& i, int argc, char** argv)
 	{
 		string arg = argv[i];
-		if (arg == "wallet" && i + 3 < argc && (string)argv[i + 1] == "import")
+		if (arg == "wallet" && i + 1 < argc)
 		{
-			i++;
-			m_mode = OperationMode::ImportPresale;
-			m_inputs = strings(1, argv[++i]);
-			m_name = argv[++i];
+			string subOption = argv[++i];
+			if (subOption == "import" && i + 2 < argc)
+			{
+				m_mode = OperationMode::ImportPresale;
+				m_inputs = strings(1, argv[++i]);
+				m_name = argv[++i];
+			}
+			else streamLightHelp(cout);
 		}
 		else if (arg == "account" && i + 1 < argc)
 		{
@@ -144,6 +148,7 @@ public:
 			}
 			else if (subOption == "update")
 				m_mode = OperationMode::RecodeBare;
+			else streamLightHelp(cout);
 		}
 		else if (m_mode == OperationMode::RecodeBare || m_mode == OperationMode::ImportBare)
 			m_inputs.push_back(arg);
@@ -777,6 +782,17 @@ public:
 	std::string lockPassword(std::string const& _accountName)
 	{
 		return m_lock.empty() ? createPassword("Enter a passphrase with which to secure account " + _accountName + ": ") : m_lock;
+	}
+
+	static void streamLightHelp(ostream& _out)
+	{
+		_out
+			<< "	account list  List all keys available in wallet." << endl
+			<< "	account new <name>  Create a new key with given name and add it in the wallet." << endl
+			<< "	account update [ <uuid>|<file> , ... ]  Decrypt and re-encrypt given keys." << endl
+			<< "	account import [ <file>|<secret-hex> , ... ] Import keys from given sources." << endl
+			<< "	wallet import <file> <name>  Import a presale wallet into a key with the given name." << endl
+			   ;
 	}
 
 	static void streamHelp(ostream& _out)
