@@ -116,6 +116,42 @@ public:
 
 	KeyCLI(OperationMode _mode = OperationMode::None): m_mode(_mode) {}
 
+	bool interpretLightOption(int& i, int argc, char** argv)
+	{
+		string arg = argv[i];
+		if (arg == "wallet" && i + 3 < argc && (string)argv[i + 1] == "import")
+		{
+			i++;
+			m_mode = OperationMode::ImportPresale;
+			m_inputs = strings(1, argv[++i]);
+			m_name = argv[++i];
+		}
+		else if (arg == "account" && i + 1 < argc)
+		{
+			string subOption = argv[++i];
+			if (subOption == "list")
+				m_mode = OperationMode::List;
+			else if (subOption == "new" && i + 1 < argc)
+			{
+				m_mode = OperationMode::New;
+				m_name = argv[++i];
+			}
+			else if (subOption == "import" && i + 2 < argc)
+			{
+				m_mode = OperationMode::ImportBare;
+				m_inputs = strings(1, argv[++i]);
+				m_name = argv[++i];
+			}
+			else if (subOption == "update")
+				m_mode = OperationMode::RecodeBare;
+		}
+		else if (m_mode == OperationMode::RecodeBare || m_mode == OperationMode::ImportBare)
+			m_inputs.push_back(arg);
+		else
+			return false;
+		return true;
+	}
+
 	bool interpretOption(int& i, int argc, char** argv)
 	{
 		string arg = argv[i];
@@ -547,7 +583,7 @@ public:
 		case OperationMode::RecodeBare:
 			for (auto const& i: m_inputs)
 				if (h128 u = fromUUID(i))
-					if (secretStore().recode(u, lockPassword(toUUID(u)), [&](){ return getPassword("Enter passphrase for key " + toUUID(u) + ": "); }, kdf()))
+					if (secretStore().recode(u, lockPassword(toUUID(u)), [&](){ return getPassword("Enter the current passphrase for key " + toUUID(u) + ": "); }, kdf()))
 						cerr << "Re-encoded " << toUUID(u) << endl;
 					else
 						cerr << "Couldn't re-encode " << toUUID(u) << "; key corrupt or incorrect passphrase supplied." << endl;
