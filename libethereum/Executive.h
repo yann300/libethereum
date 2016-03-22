@@ -63,6 +63,7 @@ public:
 private:
 	bool m_showMnemonics = false;
 	std::vector<Instruction> m_lastInst;
+	bytes m_lastCallData;
 	std::shared_ptr<Json::Value> m_trace;
 };
 

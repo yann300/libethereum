@@ -75,12 +75,14 @@ void StandardTrace::operator()(uint64_t _steps, Instruction inst, bigint newMemS
 	bool newContext = false;
 	Instruction lastInst = Instruction::STOP;
 
+	vector<string> callStack;
 	if (m_lastInst.size() == ext.depth)
 	{
 		// starting a new context
 		assert(m_lastInst.size() == ext.depth);
 		m_lastInst.push_back(inst);
 		newContext = true;
+		callStack.push_back(ext.myAddress.hex());
 	}
 	else if (m_lastInst.size() == ext.depth + 2)
 	{
@@ -88,6 +90,8 @@ void StandardTrace::operator()(uint64_t _steps, Instruction inst, bigint newMemS
 		returned = true;
 		m_lastInst.pop_back();
 		lastInst = m_lastInst.back();
+		if (callStack.size())
+			callStack.pop_back();
 	}
 	else if (m_lastInst.size() == ext.depth + 1)
 	{
@@ -100,6 +104,12 @@ void StandardTrace::operator()(uint64_t _steps, Instruction inst, bigint newMemS
 		cwarn << "GAA!!! Tracing VM and more than one new/deleted stack frame between steps!";
 		cwarn << "Attmepting naive recovery...";
 		m_lastInst.resize(ext.depth + 1);
+	}
+
+	if (ext.data.toBytes() != m_lastCallData)
+	{
+		r["calldata"] = toHex(ext.data);
+		m_lastCallData = ext.data.toBytes();
 	}
 
 	if (changesMemory(lastInst) || newContext)
@@ -119,13 +129,26 @@ void StandardTrace::operator()(uint64_t _steps, Instruction inst, bigint newMemS
 	}
 
 	if (returned || newContext)
+	{
 		r["depth"] = ext.depth;
+		Json::Value callS(Json::arrayValue);
+		for (auto const& call: callStack)
+			callS.append(call);
+		r["callstack"] = callS;
+	}
+
 	if (newContext)
 		r["address"] = ext.myAddress.hex();
 	r["steps"] = (unsigned)_steps;
 	r["inst"] = (unsigned)inst;
 	if (m_showMnemonics)
+	{
 		r["instname"] = instructionInfo(inst).name;
+		byte b = ext.code[vm.curPC()];
+		if (b >= (byte)Instruction::PUSH1 && b <= (byte)Instruction::PUSH32)
+			r["instvalue"] = "0x" + toHex(bytesConstRef(&ext.code[vm.curPC() + 1], getPushNumber((Instruction)b)));
+	}
+
 	r["pc"] = toString(vm.curPC());
 	r["gas"] = toString(gas);
 	r["gascost"] = toString(gasCost);
