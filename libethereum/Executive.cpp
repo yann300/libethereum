@@ -20,6 +20,7 @@
 
 #include <boost/timer.hpp>
 #include <json/json.h>
+#include <libethcore/CommonJS.h>
 #include <libdevcore/CommonIO.h>
 #include <libevm/VMFactory.h>
 #include <libevm/VM.h>
@@ -124,7 +125,7 @@ void StandardTrace::operator()(uint64_t _steps, Instruction inst, bigint newMemS
 	{
 		Json::Value storage(Json::objectValue);
 		for (auto const& i: ext.state().storage(ext.myAddress))
-			storage[toHex(toCompactBigEndian(i.first), 1)] = toHex(toCompactBigEndian(i.second), 1);
+			storage["@" + prettyU256(i.first)] = prettyU256(i.second);
 		r["storage"] = storage;
 	}
 
